@@ -1,0 +1,61 @@
+# Core
+python-dotenv>=1.0.0
+pyyaml>=6.0
+structlog>=24.1.0
+
+# Voice - STT
+faster-whisper>=1.0.0
+openai-whisper>=20231117
+openWakeWord>=0.1.0
+webrtcvad>=2.0.10
+pyaudio>=0.2.14
+sounddevice>=0.4.6
+soundfile>=0.12.1
+
+# Voice - TTS
+websockets>=12.0
+requests>=2.31.0
+
+# LLM
+openai>=1.12.0
+anthropic>=0.18.0
+ollama>=0.1.6
+
+# UI
+PyQt6>=6.6.0
+PyQt6-WebEngine>=6.6.0
+
+# File Operations
+aiofiles>=23.2.0
+send2trash>=1.8.2
+python-docx>=1.1.0
+openpyxl>=3.1.2
+python-pptx>=0.6.23
+PyMuPDF>=1.23.8
+Pillow>=10.2.0
+chardet>=5.2.0
+
+# Memory
+chromadb>=0.4.22
+aiosqlite>=0.19.0
+
+# Google Integrations
+google-api-python-client>=2.111.0
+google-auth-oauthlib>=1.2.0
+google-auth-httplib2>=0.2.0
+googlemaps>=4.10.0
+
+# Security & Credentials
+keyring>=24.3.0
+cryptography>=42.0.0
+
+# Windows Integration
+pywin32>=306; sys_platform == 'win32'
+
+# Process Management
+psutil>=5.9.8
+
+# Utilities
+httpx>=0.27.0
+rich>=13.7.0
+click>=8.1.7

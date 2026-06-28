@@ -1,0 +1,144 @@
+"""
+Trinity LLM — Hybrid LLM Router.
+Routes requests to cloud (primary) or local (offline fallback) LLMs.
+"""
+
+import asyncio
+import structlog
+
+logger = structlog.get_logger(__name__)
+
+
+class LLMRouter:
+    """Routes LLM requests based on availability and complexity."""
+
+    def __init__(self, config: dict):
+        self.config = config
+        self.openai_client = None
+        self.anthropic_client = None
+        self.ollama_client = None
+        self._init_clients()
+
+    def _init_clients(self):
+        """Initialize LLM clients."""
+        # OpenAI (primary)
+        try:
+            from openai import AsyncOpenAI
+            self.openai_client = AsyncOpenAI(api_key=self.config["llm"]["openai_api_key"])
+            logger.info("llm.openai.initialized")
+        except Exception as e:
+            logger.error("llm.openai.init_failed", error=str(e))
+
+        # Anthropic (fallback)
+        try:
+            from anthropic import AsyncAnthropic
+            self.anthropic_client = AsyncAnthropic(api_key=self.config["llm"]["anthropic_api_key"])
+            logger.info("llm.anthropic.initialized")
+        except Exception as e:
+            logger.warning("llm.anthropic.init_failed", error=str(e))
+
+        # Ollama (offline)
+        try:
+            import ollama
+            self.ollama_client = ollama.AsyncClient(host=self.config["llm"]["ollama_base_url"])
+            logger.info("llm.ollama.initialized")
+        except Exception as e:
+            logger.warning("llm.ollama.init_failed", error=str(e))
+
+    async def chat(self, message: str, context: dict | None = None,
+                   system_prompt: str = "") -> str:
+        """Send a chat message and get a response. Cloud-first fallback chain."""
+        messages = []
+
+        # Add system prompt
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+
+        # Add conversation history from context
+        if context and context.get("history"):
+            for exchange in context["history"][-20:]:  # Last 10 exchanges
+                role = "user" if exchange["role"] == "user" else "assistant"
+                messages.append({"role": role, "content": exchange["content"]})
+
+        # Add current message
+        messages.append({"role": "user", "content": message})
+
+        # Try cloud LLMs first (no GPU, so cloud is primary)
+        response = await self._try_openai(messages)
+        if response:
+            return response
+
+        response = await self._try_anthropic(messages)
+        if response:
+            return response
+
+        # Fall back to local LLM (offline emergency)
+        response = await self._try_ollama(messages)
+        if response:
+            return response
+
+        return "I'm having trouble reaching my brain right now. I can still help with basic file operations."
+
+    async def _try_openai(self, messages: list[dict]) -> str | None:
+        """Try OpenAI GPT-4o."""
+        if not self.openai_client:
+            return None
+
+        try:
+            response = await self.openai_client.chat.completions.create(
+                model=self.config["llm"]["cloud_primary"],
+                messages=messages,
+                max_tokens=self.config["llm"]["max_tokens"],
+                temperature=self.config["llm"]["temperature"],
+            )
+            result = response.choices[0].message.content
+            logger.info("llm.openai.success", tokens=response.usage.total_tokens)
+            return result
+        except Exception as e:
+            logger.warning("llm.openai.failed", error=str(e))
+            return None
+
+    async def _try_anthropic(self, messages: list[dict]) -> str | None:
+        """Try Anthropic Claude."""
+        if not self.anthropic_client:
+            return None
+
+        try:
+            # Anthropic uses a different message format
+            system_msg = ""
+            chat_messages = []
+            for msg in messages:
+                if msg["role"] == "system":
+                    system_msg = msg["content"]
+                else:
+                    chat_messages.append(msg)
+
+            response = await self.anthropic_client.messages.create(
+                model=self.config["llm"]["cloud_fallback"],
+                system=system_msg,
+                messages=chat_messages,
+                max_tokens=self.config["llm"]["max_tokens"],
+            )
+            result = response.content[0].text
+            logger.info("llm.anthropic.success", tokens=response.usage.input_tokens)
+            return result
+        except Exception as e:
+            logger.warning("llm.anthropic.failed", error=str(e))
+            return None
+
+    async def _try_ollama(self, messages: list[dict]) -> str | None:
+        """Try local Ollama model (offline fallback)."""
+        if not self.ollama_client:
+            return None
+
+        try:
+            response = await self.ollama_client.chat(
+                model=self.config["llm"]["local_fast"],
+                messages=messages,
+            )
+            result = response["message"]["content"]
+            logger.info("llm.ollama.success", model=self.config["llm"]["local_fast"])
+            return result
+        except Exception as e:
+            logger.warning("llm.ollama.failed", error=str(e))
+            return None

@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment variables (contains secrets!)
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Trinity data
+.trinity/
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Logs
+*.log
+
+# Backup files
+*.trinity-backup
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Cache
+.cache/
