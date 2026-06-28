@@ -35,6 +35,9 @@ class STTEngine:
 
     async def transcribe(self, audio_data: bytes) -> str:
         """Transcribe audio data to text."""
+        if not audio_data or len(audio_data) < 100:
+            return ""
+
         if self.use_cloud or self.model is None:
             return await self._transcribe_cloud(audio_data)
         return await self._transcribe_local(audio_data)
@@ -53,14 +56,17 @@ class STTEngine:
                 temp_path = f.name
                 # Convert raw bytes to wav format
                 audio_array = np.frombuffer(audio_data, dtype=np.int16)
+                if len(audio_array) == 0:
+                    Path(temp_path).unlink(missing_ok=True)
+                    return ""
                 sf.write(temp_path, audio_array, samplerate=16000)
 
-            segments, info = self.model.transcribe(temp_path, beam_size=5)
-            text = " ".join([seg.text for seg in segments]).strip()
-
-            # Cleanup
-            Path(temp_path).unlink(missing_ok=True)
-            return text
+            try:
+                segments, info = self.model.transcribe(temp_path, beam_size=5)
+                text = " ".join([seg.text for seg in segments]).strip()
+                return text
+            finally:
+                Path(temp_path).unlink(missing_ok=True)
 
         try:
             text = await loop.run_in_executor(None, _do_transcribe)
@@ -83,16 +89,16 @@ class STTEngine:
                 temp_path = f.name
                 f.write(audio_data)
 
-            with open(temp_path, "rb") as audio_file:
-                response = await client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file,
-                    language="en",
-                )
-
-            Path(temp_path).unlink(missing_ok=True)
-            logger.info("stt.transcribed", chars=len(response.text), method="cloud")
-            return response.text
+            try:
+                with open(temp_path, "rb") as audio_file:
+                    response = await client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file,
+                        language="en",
+                    )
+                return response.text
+            finally:
+                Path(temp_path).unlink(missing_ok=True)
 
         except Exception as e:
             logger.error("stt.cloud_transcription_failed", error=str(e))

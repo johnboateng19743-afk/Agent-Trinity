@@ -65,6 +65,16 @@ class TestFileSystemReader:
 
         assert not result.success
 
+    @pytest.mark.asyncio
+    async def test_list_nonexistent_dir(self, config):
+        reader = FileSystemReader(config)
+        result = await reader.execute({
+            "raw_text": "list /nonexistent_dir_12345",
+            "path": "/nonexistent_dir_12345",
+        })
+
+        assert not result.success
+
 
 class TestFileSystemWriter:
     """Tests for file writing operations."""
@@ -73,27 +83,58 @@ class TestFileSystemWriter:
     async def test_create_file(self, config, temp_dir):
         test_file = temp_dir / "new_file.txt"
         writer = FileSystemWriter(config)
-        result = await writer.execute({
+        result = await writer.create_file({
             "raw_text": f"create {test_file}",
             "path": str(test_file),
             "content": "Created by Trinity!",
         })
 
-        assert result.success or result.requires_confirmation
-        if result.success:
-            assert test_file.exists()
+        assert result.success
+        assert test_file.exists()
+        assert test_file.read_text() == "Created by Trinity!"
+
+    @pytest.mark.asyncio
+    async def test_create_dir(self, config, temp_dir):
+        test_dir = temp_dir / "new_folder"
+        writer = FileSystemWriter(config)
+        result = await writer.create_dir({
+            "raw_text": f"create {test_dir}",
+            "path": str(test_dir),
+        })
+
+        assert result.success
+        assert test_dir.is_dir()
+
+    @pytest.mark.asyncio
+    async def test_edit_file(self, config, temp_dir):
+        test_file = temp_dir / "edit_me.txt"
+        test_file.write_text("Hello World")
+
+        writer = FileSystemWriter(config)
+        result = await writer.edit_file({
+            "raw_text": f"edit {test_file}",
+            "path": str(test_file),
+            "find": "World",
+            "replace": "Trinity",
+        })
+
+        assert result.success
+        assert test_file.read_text() == "Hello Trinity"
+        # Backup should exist
+        assert test_file.with_suffix(test_file.suffix + ".trinity-backup").exists()
 
 
 class TestFileSystemSearcher:
     """Tests for file search operations."""
 
-    @pytest.mark.asyncio
-    async def test_search_by_name(self, config, temp_dir):
-        (temp_dir / "report_2026.pdf").write_text("report")
-        (temp_dir / "notes.txt").write_text("notes")
-
+    def test_matches_type(self, config):
         searcher = FileSystemSearcher(config)
-        # Basic search test
         assert searcher._matches_type(Path("test.pdf"), "pdf")
         assert searcher._matches_type(Path("photo.jpg"), "image")
         assert not searcher._matches_type(Path("test.pdf"), "image")
+
+    def test_format_size(self, config):
+        reader = FileSystemReader(config)
+        assert "B" in reader._format_size(100)
+        assert "KB" in reader._format_size(2048)
+        assert "MB" in reader._format_size(5 * 1024 * 1024)

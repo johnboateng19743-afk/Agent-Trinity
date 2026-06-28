@@ -29,6 +29,22 @@ class GoogleAuthManager:
         self.redirect_uri = config["google"]["redirect_uri"]
         self.credentials = None
 
+        # Try to load existing credentials on init
+        if self.credential_store and self.client_id:
+            self._load_credentials()
+
+    def _load_credentials(self):
+        """Try to load stored credentials."""
+        try:
+            stored = self.credential_store.load("google_credentials")
+            if stored:
+                from google.oauth2.credentials import Credentials
+                import json
+                self.credentials = Credentials.from_authorized_user_info(json.loads(stored))
+                logger.info("google_auth.credentials_loaded")
+        except Exception as e:
+            logger.debug("google_auth.no_stored_credentials", error=str(e))
+
     async def authenticate(self) -> bool:
         """Run the OAuth authentication flow."""
         if not self.client_id or not self.client_secret:
@@ -80,19 +96,18 @@ class GoogleAuthManager:
     def _build_service(self, api_name: str, version: str):
         """Build an authenticated Google API service."""
         if not self.credentials:
-            # Try to load from credential store
-            if self.credential_store:
-                stored = self.credential_store.load("google_credentials")
-                if stored:
-                    try:
-                        from google.oauth2.credentials import Credentials
-                        import json
-                        self.credentials = Credentials.from_authorized_user_info(json.loads(stored))
-                    except Exception as e:
-                        logger.warning("google_auth.load_credentials_failed", error=str(e))
+            logger.warning("google_auth.not_authenticated", api=api_name)
+            return None
 
-            if not self.credentials:
-                logger.warning("google_auth.not_authenticated", api=api_name)
+        # Refresh expired token
+        if self.credentials.expired and self.credentials.refresh_token:
+            try:
+                from google.auth.transport.requests import Request
+                self.credentials.refresh(Request())
+                if self.credential_store:
+                    self.credential_store.store("google_credentials", self.credentials.to_json())
+            except Exception as e:
+                logger.error("google_auth.refresh_failed", error=str(e))
                 return None
 
         try:
@@ -106,4 +121,8 @@ class GoogleAuthManager:
 
     def is_authenticated(self) -> bool:
         """Check if Google is authenticated."""
-        return self.credentials is not None and self.credentials.valid
+        if not self.credentials:
+            return False
+        if self.credentials.expired and not self.credentials.refresh_token:
+            return False
+        return True

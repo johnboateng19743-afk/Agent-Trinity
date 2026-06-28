@@ -49,3 +49,15 @@ class TestIntentRouter:
         router = IntentRouter(config)
         intent = await router.classify("Tell me a joke")
         assert intent.skill == "llm_conversation"
+
+    @pytest.mark.asyncio
+    async def test_intent_has_raw_text(self, config):
+        router = IntentRouter(config)
+        intent = await router.classify("Find my resume")
+        assert intent.raw_text == "Find my resume"
+
+    @pytest.mark.asyncio
+    async def test_intent_confidence_range(self, config):
+        router = IntentRouter(config)
+        intent = await router.classify("Delete old files")
+        assert 0.0 <= intent.confidence <= 1.0

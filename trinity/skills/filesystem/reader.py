@@ -19,7 +19,6 @@ class FileSystemReader(BaseSkill):
 
     async def execute(self, entities: dict, context: dict | None = None) -> SkillResult:
         """Execute read operation based on entities."""
-        action = entities.get("action", "read")
         raw_text = entities.get("raw_text", "")
 
         # Determine if this is a list_dir or read_file
@@ -155,6 +154,8 @@ class FileSystemReader(BaseSkill):
             return text[:50000]  # Cap at 50k chars
         except ImportError:
             return "[PDF reader not available — install PyMuPDF]"
+        except Exception as e:
+            return f"[Error reading PDF: {str(e)}]"
 
     async def _read_docx(self, path: Path) -> str:
         """Read text from Word document."""
@@ -164,6 +165,8 @@ class FileSystemReader(BaseSkill):
             return "\n".join([p.text for p in doc.paragraphs])
         except ImportError:
             return "[DOCX reader not available — install python-docx]"
+        except Exception as e:
+            return f"[Error reading DOCX: {str(e)}]"
 
     async def _read_xlsx(self, path: Path) -> str:
         """Read text from Excel spreadsheet."""
@@ -180,6 +183,8 @@ class FileSystemReader(BaseSkill):
             return text[:50000]
         except ImportError:
             return "[XLSX reader not available — install openpyxl]"
+        except Exception as e:
+            return f"[Error reading XLSX: {str(e)}]"
 
     async def _find_file(self, name: str) -> str | None:
         """Try to find a file by name in common directories."""
@@ -192,9 +197,12 @@ class FileSystemReader(BaseSkill):
         for search_dir in search_dirs:
             if not search_dir.exists():
                 continue
-            for item in search_dir.iterdir():
-                if name.lower() in item.name.lower():
-                    return str(item)
+            try:
+                for item in search_dir.iterdir():
+                    if name.lower() in item.name.lower():
+                        return str(item)
+            except PermissionError:
+                continue
         return None
 
     @staticmethod

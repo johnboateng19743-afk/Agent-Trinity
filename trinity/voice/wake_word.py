@@ -26,9 +26,15 @@ class WakeWordEngine:
         except ImportError:
             logger.warning("wake_word.openwakeword_not_found", fallback="energy_based")
             self.model = None
+        except Exception as e:
+            logger.warning("wake_word.model_failed", error=str(e), fallback="energy_based")
+            self.model = None
 
     def detect(self, audio_chunk: bytes) -> bool:
         """Check if the wake word is present in audio chunk."""
+        if not audio_chunk or len(audio_chunk) < 2:
+            return False
+
         if self.model is not None:
             return self._detect_ml(audio_chunk)
         return self._detect_energy(audio_chunk)
@@ -39,7 +45,6 @@ class WakeWordEngine:
             import numpy as np
             audio = np.frombuffer(audio_chunk, dtype=np.int16).astype(np.float32) / 32768.0
             prediction = self.model.predict(audio)
-            # Check if any wake word score exceeds sensitivity
             for key, score in prediction.items():
                 if score >= self.sensitivity:
                     return True
@@ -49,16 +54,16 @@ class WakeWordEngine:
             return False
 
     def _detect_energy(self, audio_chunk: bytes) -> bool:
-        """Simple energy-based detection (fallback — always returns True for any speech).
+        """Simple energy-based detection (fallback).
 
-        This is a placeholder. In production, use openWakeWord or Porcupine.
-        For testing, you can use push-to-talk instead.
+        This is a placeholder. Use push-to-talk (Ctrl+Alt+Space) for reliable activation.
         """
-        import numpy as np
         try:
+            import numpy as np
             audio = np.frombuffer(audio_chunk, dtype=np.int16).astype(np.float32)
+            if len(audio) == 0:
+                return False
             energy = np.sqrt(np.mean(audio ** 2))
-            # Very simple: if there's enough audio energy, treat it as potential wake word
-            return energy > 500  # Threshold — adjust as needed
+            return energy > 500
         except Exception:
             return False

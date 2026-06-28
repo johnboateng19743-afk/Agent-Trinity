@@ -22,20 +22,26 @@ class LLMRouter:
     def _init_clients(self):
         """Initialize LLM clients."""
         # OpenAI (primary)
-        try:
-            from openai import AsyncOpenAI
-            self.openai_client = AsyncOpenAI(api_key=self.config["llm"]["openai_api_key"])
-            logger.info("llm.openai.initialized")
-        except Exception as e:
-            logger.error("llm.openai.init_failed", error=str(e))
+        if self.config["llm"]["openai_api_key"]:
+            try:
+                from openai import AsyncOpenAI
+                self.openai_client = AsyncOpenAI(api_key=self.config["llm"]["openai_api_key"])
+                logger.info("llm.openai.initialized")
+            except Exception as e:
+                logger.error("llm.openai.init_failed", error=str(e))
+        else:
+            logger.warning("llm.openai.no_api_key")
 
         # Anthropic (fallback)
-        try:
-            from anthropic import AsyncAnthropic
-            self.anthropic_client = AsyncAnthropic(api_key=self.config["llm"]["anthropic_api_key"])
-            logger.info("llm.anthropic.initialized")
-        except Exception as e:
-            logger.warning("llm.anthropic.init_failed", error=str(e))
+        if self.config["llm"]["anthropic_api_key"]:
+            try:
+                from anthropic import AsyncAnthropic
+                self.anthropic_client = AsyncAnthropic(api_key=self.config["llm"]["anthropic_api_key"])
+                logger.info("llm.anthropic.initialized")
+            except Exception as e:
+                logger.warning("llm.anthropic.init_failed", error=str(e))
+        else:
+            logger.warning("llm.anthropic.no_api_key")
 
         # Ollama (offline)
         try:
@@ -65,16 +71,16 @@ class LLMRouter:
 
         # Try cloud LLMs first (no GPU, so cloud is primary)
         response = await self._try_openai(messages)
-        if response:
+        if response is not None:
             return response
 
         response = await self._try_anthropic(messages)
-        if response:
+        if response is not None:
             return response
 
         # Fall back to local LLM (offline emergency)
         response = await self._try_ollama(messages)
-        if response:
+        if response is not None:
             return response
 
         return "I'm having trouble reaching my brain right now. I can still help with basic file operations."
@@ -92,7 +98,10 @@ class LLMRouter:
                 temperature=self.config["llm"]["temperature"],
             )
             result = response.choices[0].message.content
-            logger.info("llm.openai.success", tokens=response.usage.total_tokens)
+            if result and hasattr(response, 'usage') and response.usage:
+                logger.info("llm.openai.success", tokens=response.usage.total_tokens)
+            else:
+                logger.info("llm.openai.success")
             return result
         except Exception as e:
             logger.warning("llm.openai.failed", error=str(e))
@@ -104,7 +113,7 @@ class LLMRouter:
             return None
 
         try:
-            # Anthropic uses a different message format
+            # Anthropic uses a different message format — no "system" in messages array
             system_msg = ""
             chat_messages = []
             for msg in messages:
@@ -113,14 +122,18 @@ class LLMRouter:
                 else:
                     chat_messages.append(msg)
 
+            # Ensure first message is not system
+            if chat_messages and chat_messages[0]["role"] == "system":
+                chat_messages = chat_messages[1:]
+
             response = await self.anthropic_client.messages.create(
                 model=self.config["llm"]["cloud_fallback"],
-                system=system_msg,
+                system=system_msg if system_msg else anthropic.NOT_GIVEN,
                 messages=chat_messages,
                 max_tokens=self.config["llm"]["max_tokens"],
             )
             result = response.content[0].text
-            logger.info("llm.anthropic.success", tokens=response.usage.input_tokens)
+            logger.info("llm.anthropic.success")
             return result
         except Exception as e:
             logger.warning("llm.anthropic.failed", error=str(e))

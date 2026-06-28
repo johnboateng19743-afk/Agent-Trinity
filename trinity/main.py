@@ -9,7 +9,6 @@ import asyncio
 import click
 from pathlib import Path
 
-from trinity.daemon import TrinityDaemon
 from trinity.utils.config import load_config
 from trinity.utils.logging import setup_logging
 
@@ -45,6 +44,7 @@ def run(debug: bool, config: str | None):
     click.echo(f"   LLM:  {cfg['llm']['cloud_primary']} (cloud-first)")
     click.echo()
 
+    from trinity.daemon import TrinityDaemon
     daemon = TrinityDaemon(cfg)
 
     # Handle Ctrl+C gracefully
@@ -64,15 +64,20 @@ def run(debug: bool, config: str | None):
 @cli.command()
 def status():
     """Check if Trinity is running."""
-    import psutil
-    trinity_procs = [p for p in psutil.process_iter(["name", "cmdline"])
-                     if p.info["cmdline"] and "trinity" in " ".join(p.info["cmdline"])]
-    if trinity_procs:
-        click.echo("✅ Trinity is running")
-        for p in trinity_procs:
-            click.echo(f"   PID: {p.pid} — {' '.join(p.info['cmdline'][:3])}")
-    else:
-        click.echo("❌ Trinity is not running")
+    try:
+        import psutil
+        trinity_procs = [
+            p for p in psutil.process_iter(["name", "cmdline"])
+            if p.info["cmdline"] and "trinity" in " ".join(p.info["cmdline"])
+        ]
+        if trinity_procs:
+            click.echo("✅ Trinity is running")
+            for p in trinity_procs:
+                click.echo(f"   PID: {p.pid} — {' '.join(p.info['cmdline'][:3])}")
+        else:
+            click.echo("❌ Trinity is not running")
+    except ImportError:
+        click.echo("❓ Cannot check status — psutil not installed")
 
 
 @cli.command()

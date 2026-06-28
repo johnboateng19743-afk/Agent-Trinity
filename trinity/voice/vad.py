@@ -3,7 +3,6 @@ Trinity Voice Engine — Voice Activity Detection.
 """
 
 import structlog
-import numpy as np
 
 logger = structlog.get_logger(__name__)
 
@@ -13,7 +12,7 @@ class VoiceActivityDetector:
 
     def __init__(self, config: dict):
         self.config = config
-        self.silence_threshold = 500  # Energy threshold for silence
+        self.silence_threshold = 500
         self._vad = None
         self._init_vad()
 
@@ -29,26 +28,27 @@ class VoiceActivityDetector:
 
     def is_silence(self, audio_chunk: bytes) -> bool:
         """Check if an audio chunk is silence."""
-        if self._vad is not None:
-            return self._is_silence_webrtc(audio_chunk)
-        return self._is_silence_energy(audio_chunk)
-
-    def _is_silence_webrtc(self, audio_chunk: bytes) -> bool:
-        """Use WebRTC VAD for silence detection."""
-        try:
-            # WebRTC VAD requires specific frame sizes
-            # 16kHz, 16-bit mono = 320 samples per 20ms frame
-            frame_size = 320 * 2  # bytes
-            if len(audio_chunk) >= frame_size:
-                return not self._vad.is_speech(audio_chunk[:frame_size], sample_rate=16000)
+        if not audio_chunk or len(audio_chunk) < 2:
             return True
-        except Exception:
-            return self._is_silence_energy(audio_chunk)
+
+        if self._vad is not None:
+            try:
+                # WebRTC VAD requires 16kHz 16-bit mono = 320 samples per 20ms frame
+                frame_size = 640  # 320 samples * 2 bytes
+                if len(audio_chunk) >= frame_size:
+                    return not self._vad.is_speech(audio_chunk[:frame_size], sample_rate=16000)
+            except Exception:
+                pass
+
+        return self._is_silence_energy(audio_chunk)
 
     def _is_silence_energy(self, audio_chunk: bytes) -> bool:
         """Simple energy-based silence detection."""
         try:
+            import numpy as np
             audio = np.frombuffer(audio_chunk, dtype=np.int16).astype(np.float32)
+            if len(audio) == 0:
+                return True
             energy = np.sqrt(np.mean(audio ** 2))
             return energy < self.silence_threshold
         except Exception:

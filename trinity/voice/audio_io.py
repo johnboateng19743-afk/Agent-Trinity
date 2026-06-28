@@ -47,7 +47,11 @@ class AudioIO:
 
         def _read():
             self._init_pyaudio()
-            return self._stream.read(CHUNK_SIZE, exception_on_overflow=False)
+            try:
+                return self._stream.read(CHUNK_SIZE, exception_on_overflow=False)
+            except Exception as e:
+                logger.error("audio_io.read_error", error=str(e))
+                return b"\x00" * CHUNK_SIZE * 2
 
         try:
             return await loop.run_in_executor(None, _read)
@@ -62,8 +66,8 @@ class AudioIO:
         def _play():
             import subprocess
             subprocess.run(
-                ["ffplay", "-nodisp", "-autoexit", str(path)],
-                check=True, capture_output=True
+                ["ffplay", "-nodisp", "-autoexit", "-quiet", str(path)],
+                capture_output=True, timeout=10
             )
 
         try:
@@ -75,8 +79,13 @@ class AudioIO:
 
     def cleanup(self):
         """Clean up audio resources."""
-        if self._stream:
-            self._stream.stop_stream()
-            self._stream.close()
-        if self._pyaudio:
-            self._pyaudio.terminate()
+        try:
+            if self._stream:
+                self._stream.stop_stream()
+                self._stream.close()
+                self._stream = None
+            if self._pyaudio:
+                self._pyaudio.terminate()
+                self._pyaudio = None
+        except Exception as e:
+            logger.warning("audio_io.cleanup_error", error=str(e))

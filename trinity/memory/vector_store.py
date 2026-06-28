@@ -73,7 +73,6 @@ class MemoryStore:
             return 0
 
         try:
-            # Get all documents and find matches
             all_data = self.collection.get()
             ids_to_delete = []
             for i, doc in enumerate(all_data["documents"]):

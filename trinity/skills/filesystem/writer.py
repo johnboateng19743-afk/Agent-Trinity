@@ -3,6 +3,7 @@ Trinity Skill — File System Writer.
 Creates and edits files.
 """
 
+import shutil
 import structlog
 from pathlib import Path
 from trinity.skills.base import BaseSkill, SkillResult
@@ -29,7 +30,7 @@ class FileSystemWriter(BaseSkill):
         # If no content specified, create empty file
         path = Path(self._resolve_path(path_str))
 
-        # If path ends with separator or no extension, create directory
+        # If path ends with separator or no extension, create directory instead
         if not path.suffix and not content:
             return await self.create_dir(entities)
 
@@ -74,6 +75,7 @@ class FileSystemWriter(BaseSkill):
         path = Path(self._resolve_path(path_str))
 
         if not path.exists():
+            # Try to find the file
             found = await self._find_file(path_str)
             if found:
                 path = Path(found)
@@ -84,9 +86,8 @@ class FileSystemWriter(BaseSkill):
             return self._error(f"'{path.name}' is not a file.")
 
         try:
-            # Create backup
+            # Create backup before editing
             backup_path = path.with_suffix(path.suffix + ".trinity-backup")
-            import shutil
             shutil.copy2(str(path), str(backup_path))
 
             # Read current content
@@ -115,9 +116,12 @@ class FileSystemWriter(BaseSkill):
         except PermissionError:
             return self._error(f"I don't have permission to edit '{path.name}'.")
         except Exception as e:
-            # Restore from backup
+            # Restore from backup on error
             if backup_path.exists():
-                shutil.copy2(str(backup_path), str(path))
+                try:
+                    shutil.copy2(str(backup_path), str(path))
+                except Exception:
+                    pass
             return self._error(f"Error editing file: {str(e)}. Original file restored from backup.")
 
     async def _find_file(self, name: str) -> str | None:

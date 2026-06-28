@@ -2,15 +2,13 @@
 python-dotenv>=1.0.0
 pyyaml>=6.0
 structlog>=24.1.0
+pytz>=2024.1
 
 # Voice - STT
 faster-whisper>=1.0.0
-openai-whisper>=20231117
-openWakeWord>=0.1.0
 webrtcvad>=2.0.10
-pyaudio>=0.2.14
-sounddevice>=0.4.6
 soundfile>=0.12.1
+numpy>=1.26.0
 
 # Voice - TTS
 websockets>=12.0
@@ -23,7 +21,6 @@ ollama>=0.1.6
 
 # UI
 PyQt6>=6.6.0
-PyQt6-WebEngine>=6.6.0
 
 # File Operations
 aiofiles>=23.2.0
@@ -48,9 +45,6 @@ googlemaps>=4.10.0
 # Security & Credentials
 keyring>=24.3.0
 cryptography>=42.0.0
-
-# Windows Integration
-pywin32>=306; sys_platform == 'win32'
 
 # Process Management
 psutil>=5.9.8
