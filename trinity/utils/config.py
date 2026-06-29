@@ -44,7 +44,7 @@ DEFAULTS = {
         "local_fast": "qwen2.5:1.5b",
         "local_capable": "llama3.2:3b",
         "cloud_primary": "gpt-4o",
-        "cloud_fallback": "claude-sonnet-4-20250514",
+        "cloud_fallback": "claude-3-5-sonnet-20241022",
         "max_tokens": 4096,
         "temperature": 0.7,
     },

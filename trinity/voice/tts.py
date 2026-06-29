@@ -67,6 +67,18 @@ class TTSEngine:
             logger.error("tts.generation_failed", error=str(e))
             raise
 
+    def _get_voice_settings(self, emotion: str = "neutral") -> dict:
+        """Return voice settings based on emotion."""
+        presets = {
+            "neutral": {"stability": 0.5, "similarity_boost": 0.75, "style": 0.0, "use_speaker_boost": True},
+            "friendly": {"stability": 0.4, "similarity_boost": 0.75, "style": 0.3, "use_speaker_boost": True},
+            "excited": {"stability": 0.3, "similarity_boost": 0.75, "style": 0.7, "use_speaker_boost": True},
+            "calm": {"stability": 0.7, "similarity_boost": 0.8, "style": 0.1, "use_speaker_boost": True},
+            "serious": {"stability": 0.6, "similarity_boost": 0.75, "style": 0.2, "use_speaker_boost": True},
+            "whisper": {"stability": 0.5, "similarity_boost": 0.8, "style": 0.0, "use_speaker_boost": False},
+        }
+        return presets.get(emotion, presets["neutral"])
+
     async def _play_audio(self, audio_data: bytes):
         """Play MP3 audio data through speakers."""
         loop = asyncio.get_event_loop()

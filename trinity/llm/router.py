@@ -6,6 +6,11 @@ Routes requests to cloud (primary) or local (offline fallback) LLMs.
 import asyncio
 import structlog
 
+try:
+    import anthropic as _anthropic_module
+except ImportError:
+    _anthropic_module = None
+
 logger = structlog.get_logger(__name__)
 
 
@@ -128,7 +133,7 @@ class LLMRouter:
 
             response = await self.anthropic_client.messages.create(
                 model=self.config["llm"]["cloud_fallback"],
-                system=system_msg if system_msg else anthropic.NOT_GIVEN,
+                system=system_msg if system_msg else (_anthropic_module.NOT_GIVEN if _anthropic_module else ""),
                 messages=chat_messages,
                 max_tokens=self.config["llm"]["max_tokens"],
             )
