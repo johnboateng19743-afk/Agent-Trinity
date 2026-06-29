@@ -64,7 +64,7 @@ DEFAULTS = {
     "updates": {
         "channel": "stable",
         "auto_update": True,
-        "update_repo": "https://github.com/johnboateng19743-design/Agent-Trinity",
+        "update_repo": "https://github.com/johnboateng19743-afk/Agent-Trinity",
         "auto_check": True,
         "check_interval_hours": 6,
     },

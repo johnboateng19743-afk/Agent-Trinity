@@ -89,7 +89,7 @@ TRINITY_REDACT_PII=true
 TRINITY_STORE_VOICE=false
 TRINITY_UPDATE_CHANNEL=stable
 TRINITY_AUTO_UPDATE=true
-TRINITY_UPDATE_REPO=https://github.com/johnboateng19743-design/Agent-Trinity
+TRINITY_UPDATE_REPO=https://github.com/johnboateng19743-afk/Agent-Trinity
 TRINITY_GPU_ENABLED=false
 TRINITY_GPU_DEVICE=-1
 TRINITY_MAX_RAM_GB=2
@@ -409,7 +409,7 @@ DEFAULTS = {
                "maps_api_key": ""},
     "hardware": {"gpu_enabled": False, "gpu_device": -1, "max_ram_gb": 2},
     "updates": {"channel": "stable", "auto_update": True,
-                "update_repo": "https://github.com/johnboateng19743-design/Agent-Trinity"},
+                "update_repo": "https://github.com/johnboateng19743-afk/Agent-Trinity"},
     "advanced": {"local_http_port": 8400, "watchdog_enabled": True},
 }
 

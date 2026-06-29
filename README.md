@@ -30,7 +30,7 @@ Trinity is a voice-first AI agent that lives on your Windows machine. She can he
 
 ### 1. Clone the repository
 ```powershell
-git clone https://github.com/johnboateng19743-design/Agent-Trinity.git
+git clone https://github.com/johnboateng19743-afk/Agent-Trinity.git
 cd Agent-Trinity
 ```
 

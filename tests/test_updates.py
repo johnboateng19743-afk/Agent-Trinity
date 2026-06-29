@@ -12,12 +12,12 @@ class TestUpdateChecker:
     def test_init(self):
         config = {
             "updates": {
-                "update_repo": "https://github.com/johnboateng19743-design/Agent-Trinity",
+                "update_repo": "https://github.com/johnboateng19743-afk/Agent-Trinity",
                 "channel": "stable",
             }
         }
         checker = UpdateChecker(config)
-        assert checker.repo_url == "https://github.com/johnboateng19743-design/Agent-Trinity"
+        assert checker.repo_url == "https://github.com/johnboateng19743-afk/Agent-Trinity"
         assert checker.channel == "stable"
 
     @pytest.mark.asyncio
