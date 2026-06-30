@@ -1,56 +1,68 @@
 # 🜂 Trinity — Windows Installation Guide
 
-> Step-by-step instructions for Mr. Walker to install Trinity on a Windows PC
+> Step-by-step for Mr. Walker — no developer experience needed
 
 ---
 
-## What You Need Before Starting
+## What You Need
 
-1. **Windows 10 or 11** PC with internet
-2. **Your GitHub account** — `johnboateng19743-afk`
-3. **A GitHub Personal Access Token** (to download the code)
-
----
-
-## Step 1: Create a GitHub Personal Access Token
-
-1. Go to: https://github.com/settings/tokens
-2. Click **"Generate new token (classic)"**
-3. Name it: `Trinity Install`
-4. Check the box: **repo** (full control of private repositories)
-5. Click **Generate token** at the bottom
-6. **Copy the token** (starts with `ghp_`) — you'll need it below
+- Windows 10 or 11 PC with internet
+- Your GitHub account: `johnboateng19743-afk`
 
 ---
 
-## Step 2: Install Python 3.11
+## Step 1: Install Python 3.11
 
 1. Go to: https://www.python.org/downloads/release/python-3119/
 2. Download **"Windows installer (64-bit)"**
 3. Run the installer
-4. ⚠️ **CHECK THE BOX** that says "Add Python to PATH"
+4. ⚠️ **CHECK THE BOX** → "Add Python to PATH"
 5. Click **Install Now**
-6. After it finishes, close the installer
 
-**Verify it worked:**
-- Open **Command Prompt** (press Windows key, type `cmd`, press Enter)
-- Type: `python --version`
-- You should see: `Python 3.11.x`
+**Verify:** Open Command Prompt, type `python --version` → should say `Python 3.11.x`
 
 ---
 
-## Step 3: Install Git
+## Step 2: Install Git
 
 1. Go to: https://git-scm.com/download/win
 2. Download and run the installer
 3. Click **Next** through all defaults
-4. When it finishes, close the installer
+4. Close when done
 
 ---
 
-## Step 4: Download Trinity
+## Step 3: Install Ollama (Local AI — FREE)
 
-Open **Command Prompt** and type these commands one at a time:
+1. Go to: https://ollama.com/download
+2. Download and install for Windows
+3. After install, open a **new** Command Prompt and type:
+
+```
+ollama pull llama3.2:3b
+```
+
+Wait for the download to finish (~2 GB). This is Trinity's brain — 100% free, runs on your PC.
+
+---
+
+## Step 4: Install ffmpeg (for Audio)
+
+1. Go to: https://www.gyan.dev/ffmpeg/builds/
+2. Download **ffmpeg-release-essentials.zip**
+3. Extract to `C:\ffmpeg`
+4. Add to Windows PATH:
+   - Press Windows key, type "environment", click **Edit environment variables**
+   - Click **Environment Variables**
+   - Under "User variables", select **Path**, click **Edit**
+   - Click **New**, type `C:\ffmpeg\bin`
+   - Click OK on all windows
+
+---
+
+## Step 5: Download Trinity
+
+Open **Command Prompt**:
 
 ```
 cd %USERPROFILE%
@@ -58,14 +70,12 @@ git clone https://github.com/johnboateng19743-afk/Agent-Trinity.git
 cd Agent-Trinity
 ```
 
-When it asks for your username, type: `johnboateng19743-afk`
-When it asks for your password, paste your **GitHub token** (the `ghp_...` one)
+When asked for username: `johnboateng19743-afk`
+When asked for password: paste your GitHub token (`ghp_...`)
 
 ---
 
-## Step 5: Install Dependencies
-
-Still in Command Prompt, inside the Agent-Trinity folder:
+## Step 6: Install Python Dependencies
 
 ```
 python -m venv venv
@@ -74,102 +84,51 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-This will download and install all the Python packages Trinity needs. It may take 5–10 minutes.
+This takes 5–10 minutes. Wait for it to finish.
 
 ---
 
-## Step 6: Install Ollama (for Offline AI)
-
-Ollama lets Trinity work even when you have no internet.
-
-1. Go to: https://ollama.com/download
-2. Download and install for Windows
-3. After it installs, open a **new** Command Prompt and type:
+## Step 7: Start Trinity!
 
 ```
-ollama pull qwen2.5:1.5b
+python -m trinity.main run
 ```
 
-This downloads a small AI model (about 1 GB). Wait for it to finish.
+Say **"Trinity"** then ask a question. That's it! 🎉
+
+**Other commands:**
+- Check status: `python -m trinity.main status`
+- Stop Trinity: `python -m trinity.main stop`
 
 ---
 
-## Step 7: Install ffmpeg (for Audio)
+## Optional: Set Up Google (Calendar, Email, Maps)
 
-1. Go to: https://www.gyan.dev/ffmpeg/builds/
-2. Download **ffmpeg-release-essentials.zip**
-3. Extract the zip to `C:\ffmpeg`
-4. Add `C:\ffmpeg\bin` to your Windows PATH:
-   - Press Windows key, type "environment", click **"Edit environment variables"**
-   - Click **"Environment Variables"**
-   - Under "User variables", select **Path**, click **Edit**
-   - Click **New**, type `C:\ffmpeg\bin`
-   - Click OK on all windows
-
-**Verify:** Open a new Command Prompt, type `ffplay` — you should see usage info (not an error)
-
----
-
-## Step 8: Fix Your API Keys
-
-You need to add credits to your API accounts before Trinity can talk to AI:
-
-### OpenAI (Primary AI)
-1. Go to: https://platform.openai.com/account/billing
-2. Add a payment method and add at least **$5 credit**
-3. Your API key is already saved in the `.env` file
-
-### Anthropic (Backup AI)
-1. Go to: https://console.anthropic.com/settings/billing
-2. Add a payment method and add at least **$5 credit**
-3. Your API key is already saved in the `.env` file
-
-### ElevenLabs (Voice)
-1. Go to: https://elevenlabs.io/app/settings/api-keys
-2. Your current key may be expired. Generate a **new API key**
-3. Copy the new key
-4. Open the file `.env` in the Agent-Trinity folder with Notepad
-5. Replace the `ELEVENLABS_API_KEY=...` line with your new key
-6. Save the file
-
----
-
-## Step 9: Set Up Google OAuth
+This is optional — Trinity works without it.
 
 1. Go to: https://console.cloud.google.com/
 2. Select project **agent-trinity-500718**
 3. Go to **APIs & Services → Credentials**
 4. Click your OAuth 2.0 Client
-5. Under **Authorized redirect URIs**, add:
-   ```
-   http://localhost:8400/auth/callback
-   ```
-6. Go to **APIs & Services → OAuth consent screen**
-7. Under **Test users**, add your Gmail address
-8. Click Save
+5. Add redirect URI: `http://localhost:8400/auth/callback`
+6. Go to **OAuth consent screen**
+7. Add your Gmail as a **test user**
+8. Save
 
 ---
 
-## Step 10: Start Trinity!
+## Optional: Add Cloud AI (for smarter answers)
 
-Open **Command Prompt**:
+Trinity uses local Llama 3.2 by default (free). You can add cloud AI for better answers:
 
-```
-cd %USERPROFILE%\Agent-Trinity
-venv\Scripts\activate
-python -m trinity.main run
-```
+| Provider | Cost | How |
+|----------|------|-----|
+| **OpenAI** (GPT-4o) | $5+ | Add billing at platform.openai.com/account/billing |
+| **Anthropic** (Claude) | $5+ | Add billing at console.anthropic.com/settings/billing |
 
-Trinity will start listening. Say **"Trinity"** to wake it up, then ask a question.
-
-To check if it's running:
+After adding credits, edit `.env` and change:
 ```
-python -m trinity.main status
-```
-
-To stop it:
-```
-python -m trinity.main stop
+LLM_MODE=cloud
 ```
 
 ---
@@ -180,25 +139,27 @@ python -m trinity.main stop
 |---------|-----|
 | `python` not found | Reinstall Python with "Add to PATH" checked |
 | `pip install` fails | Make sure you ran `venv\Scripts\activate` first |
-| No sound | Install ffmpeg (Step 7) and check your speakers |
-| "Insufficient quota" error | Add credits to your OpenAI/Anthropic account (Step 8) |
-| "Unauthorized" error from ElevenLabs | Generate a new API key (Step 8) |
-| Google login fails | Add redirect URI and test user (Step 9) |
-| Microphone not working | Check Windows Settings → Privacy → Microphone → allow apps |
-| `ollama` not found | Install Ollama (Step 6) or skip it (Trinity will use cloud AI) |
+| No sound | Install ffmpeg (Step 4), check speakers |
+| `ollama` not found | Install Ollama (Step 3), restart Command Prompt |
+| Llama is slow | Normal on first run — it gets faster after warming up |
+| Microphone not working | Windows Settings → Privacy → Microphone → allow apps |
 
 ---
 
-## Quick Start (One-Line Install)
+## Quick Install (PowerShell — if you already have Python + Git)
 
-If you have Python and Git already, open **PowerShell as Administrator** and run:
+Open **PowerShell as Administrator**:
 
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
 cd $env:USERPROFILE
 git clone https://github.com/johnboateng19743-afk/Agent-Trinity.git
 cd Agent-Trinity
-.\install.ps1
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+ollama pull llama3.2:3b
+python -m trinity.main run
 ```
 
 ---
