@@ -161,30 +161,30 @@ class TrinityWebApp:
     async def _process_message(self, text: str, session_id: str) -> str:
         """Process a user message and return Trinity's response."""
         # Check for research queries
-        research_keywords = ["research", "look up", "find info", "search for", "what is", "who is", "tell me about", "investigate", "analyze"]
+        research_keywords = ["research", "look up", "find info", "search for", "tell me about", "investigate", "analyze"]
+        problem_keywords = ["how do i", "how to", "solve", "fix", "troubleshoot", "debug", "help me understand", "explain why"]
+        writing_keywords = ["write", "draft", "compose", "email", "letter", "essay", "blog", "article"]
+
         is_research = any(kw in text.lower() for kw in research_keywords)
+        is_problem = any(kw in text.lower() for kw in problem_keywords)
+        is_writing = any(kw in text.lower() for kw in writing_keywords)
+
+        # Select the best system prompt
+        from trinity.prompts import RESEARCH_SYSTEM_PROMPT, PROBLEM_SOLVING_PROMPT, WRITING_SYSTEM_PROMPT, MAIN_SYSTEM_PROMPT
+
+        if is_research:
+            system_prompt = RESEARCH_SYSTEM_PROMPT
+        elif is_problem:
+            system_prompt = PROBLEM_SOLVING_PROMPT
+        elif is_writing:
+            system_prompt = WRITING_SYSTEM_PROMPT
+        else:
+            system_prompt = MAIN_SYSTEM_PROMPT
 
         # Check for skill commands
         skill_response = await self._try_skill_command(text)
         if skill_response:
             return skill_response
-
-        # Build system prompt with context
-        user_name = self.config.get("trinity", {}).get("user_name", "User")
-        system_prompt = f"""You are Trinity, a personal AI assistant and research agent for {user_name}. 
-You are helpful, direct, and conversational. You live on {user_name}'s computer and can help with:
-- Research and information gathering
-- File operations (reading, writing, searching files)
-- Answering questions on any topic
-- Task management and planning
-- Technical help
-
-Keep responses concise but thorough. Use bullet points for lists. Be friendly but professional.
-If you don't know something, say so honestly rather than guessing."""
-
-        # Add research instructions if needed
-        if is_research:
-            system_prompt += "\n\nThe user is asking a research question. Provide a thorough, well-organized response with key facts."
 
         # Build message history
         history = self.conversations.get(session_id, [])[-20:]

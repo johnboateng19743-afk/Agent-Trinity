@@ -264,9 +264,8 @@ class VoiceDaemon:
     async def _think(self, text: str) -> str:
         """Send text to LLM and get response."""
         try:
-            system_prompt = f"""You are Trinity, a personal voice AI assistant for {self.user_name}.
-You are conversational, helpful, and concise. Keep responses under 3 sentences when possible since you speak out loud.
-Be natural and friendly. You can help with research, file operations, questions, and task management."""
+            from trinity.prompts import VOICE_SYSTEM_PROMPT
+            system_prompt = VOICE_SYSTEM_PROMPT
 
             response = await self.llm.chat(
                 message=text,

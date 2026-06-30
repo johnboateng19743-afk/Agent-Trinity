@@ -61,8 +61,10 @@ class LLMRouter:
         """Send a chat message and get a response. Local-first with cloud fallback."""
         messages = []
 
-        # Add system prompt
-        if system_prompt:
+        # Use default system prompt if none provided
+        if not system_prompt:
+            from trinity.prompts import MAIN_SYSTEM_PROMPT
+            system_prompt = MAIN_SYSTEM_PROMPT
             messages.append({"role": "system", "content": system_prompt})
 
         # Add conversation history from context
