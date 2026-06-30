@@ -41,10 +41,11 @@ DEFAULTS = {
         "openai_api_key": "",
         "anthropic_api_key": "",
         "ollama_base_url": "http://localhost:11434",
-        "local_fast": "qwen2.5:1.5b",
+        "local_fast": "llama3.2:1b",
         "local_capable": "llama3.2:3b",
         "cloud_primary": "gpt-4o",
         "cloud_fallback": "claude-3-5-sonnet-20241022",
+        "mode": "local",
         "max_tokens": 4096,
         "temperature": 0.7,
     },
@@ -115,6 +116,7 @@ def load_config(config_path: str | None = None) -> dict:
     config["llm"]["ollama_base_url"] = os.getenv("OLLAMA_BASE_URL", config["llm"]["ollama_base_url"])
     config["llm"]["local_fast"] = os.getenv("LOCAL_LLM_FAST", config["llm"]["local_fast"])
     config["llm"]["local_capable"] = os.getenv("LOCAL_LLM_CAPABLE", config["llm"]["local_capable"])
+    config["llm"]["mode"] = os.getenv("LLM_MODE", config["llm"].get("mode", "local"))
     config["llm"]["cloud_primary"] = os.getenv("CLOUD_LLM_PRIMARY", config["llm"]["cloud_primary"])
     config["llm"]["cloud_fallback"] = os.getenv("CLOUD_LLM_FALLBACK", config["llm"]["cloud_fallback"])
 

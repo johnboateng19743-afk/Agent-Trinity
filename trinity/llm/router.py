@@ -58,7 +58,7 @@ class LLMRouter:
 
     async def chat(self, message: str, context: dict | None = None,
                    system_prompt: str = "") -> str:
-        """Send a chat message and get a response. Cloud-first fallback chain."""
+        """Send a chat message and get a response. Local-first with cloud fallback."""
         messages = []
 
         # Add system prompt
@@ -74,19 +74,35 @@ class LLMRouter:
         # Add current message
         messages.append({"role": "user", "content": message})
 
-        # Try cloud LLMs first (no GPU, so cloud is primary)
-        response = await self._try_openai(messages)
-        if response is not None:
-            return response
+        # Check mode: local-first or cloud-first
+        mode = self.config["llm"].get("mode", "local")
 
-        response = await self._try_anthropic(messages)
-        if response is not None:
-            return response
+        if mode == "local":
+            # Local-first: try Ollama, then fall back to cloud
+            response = await self._try_ollama(messages)
+            if response is not None:
+                return response
 
-        # Fall back to local LLM (offline emergency)
-        response = await self._try_ollama(messages)
-        if response is not None:
-            return response
+            response = await self._try_openai(messages)
+            if response is not None:
+                return response
+
+            response = await self._try_anthropic(messages)
+            if response is not None:
+                return response
+        else:
+            # Cloud-first: try OpenAI, then Anthropic, then Ollama
+            response = await self._try_openai(messages)
+            if response is not None:
+                return response
+
+            response = await self._try_anthropic(messages)
+            if response is not None:
+                return response
+
+            response = await self._try_ollama(messages)
+            if response is not None:
+                return response
 
         return "I'm having trouble reaching my brain right now. I can still help with basic file operations."
 
