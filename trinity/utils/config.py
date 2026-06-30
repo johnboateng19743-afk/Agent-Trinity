@@ -29,7 +29,7 @@ DEFAULTS = {
     },
     "voice": {
         "elevenlabs_api_key": "",
-        "elevenlabs_voice_id": "lh03w2cCRf05ksqPizq",
+        "elevenlabs_voice_id": "sB7vwSCyX0tQmU24cW2C",
         "elevenlabs_model": "eleven_turbo_v2_5",
         "wake_word": "Trinity",
         "wake_sensitivity": 0.5,
