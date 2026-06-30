@@ -59,8 +59,8 @@ Write-Host "   ✅ Dependencies installed" -ForegroundColor Green
 # Create .env file
 @"
 # .env — Trinity Configuration
-ELEVENLABS_API_KEY=sk_c5fff826b166ca37e59a811d6b3ab9ddca80486e11fde607
-ELEVENLABS_VOICE_ID=sB7vwSCyX0tQmU24cW2C
+ELEVENLABS_API_KEY=sk_6bb94189d27375342674a4899112cd26858ff8b9f39a3e96
+ELEVENLABS_VOICE_ID=pNInz6obpgDQGcFmaJgB
 ELEVENLABS_MODEL=eleven_turbo_v2_5
 OPENAI_API_KEY=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
 ANTHROPIC_API_KEY=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
@@ -397,7 +397,7 @@ DEFAULTS = {
                 "home_city": "Accra", "work_address": "", "default_browser": "edge", "auto_start": True,
                 "data_dir": "~/.trinity", "log_level": "INFO", "privacy_mode": "hybrid",
                 "redact_pii": True, "store_voice": False, "debug_mode": False},
-    "voice": {"elevenlabs_api_key": "", "elevenlabs_voice_id": "sB7vwSCyX0tQmU24cW2C",
+    "voice": {"elevenlabs_api_key": "", "elevenlabs_voice_id": "pNInz6obpgDQGcFmaJgB",
               "elevenlabs_model": "eleven_turbo_v2_5", "wake_word": "Trinity",
               "wake_sensitivity": 0.5, "always_listening": True},
     "llm": {"openai_api_key": "", "anthropic_api_key": "", "ollama_base_url": "http://localhost:11434",
