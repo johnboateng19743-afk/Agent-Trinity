@@ -105,6 +105,47 @@ def run(debug: bool, config: str | None, web: bool, port: int):
 
 
 @cli.command()
+def voice():
+    """Start Trinity in voice mode — always listening, say 'Trinity' to activate."""
+    setup_logging()
+    cfg = load_config()
+
+    click.echo("🜂 Starting Trinity Voice Mode...")
+    click.echo(f"   Say 'Trinity' to wake me up")
+    click.echo()
+
+    from trinity.llm.router import LLMRouter
+    from trinity.voice.tts import TTSEngine
+    from trinity.voice.daemon import VoiceDaemon
+    from trinity.voice.stt import STTEngine
+
+    llm_router = LLMRouter(cfg)
+    tts_engine = TTSEngine(cfg)
+
+    # Try to init STT
+    stt_engine = None
+    try:
+        stt_engine = STTEngine(cfg)
+    except Exception as e:
+        click.echo(f"   ⚠️  STT init warning: {e}")
+        click.echo("   Using built-in Whisper for wake word detection")
+
+    daemon = VoiceDaemon(cfg, llm_router, tts_engine, stt_engine)
+
+    def shutdown(signum, frame):
+        click.echo("\n🜂 Trinity shutting down...")
+        daemon.stop()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, shutdown)
+
+    try:
+        asyncio.run(daemon.start())
+    except KeyboardInterrupt:
+        shutdown(None, None)
+
+
+@cli.command()
 def status():
     """Check if Trinity is running."""
     try:
