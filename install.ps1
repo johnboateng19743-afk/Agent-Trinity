@@ -59,7 +59,7 @@ Write-Host "   ✅ Dependencies installed" -ForegroundColor Green
 # Create .env file
 @"
 # .env — Trinity Configuration
-ELEVENLABS_API_KEY=8ead242dce473581fb2fc8c46a20e1f5776e534f
+ELEVENLABS_API_KEY=sk_c5fff826b166ca37e59a811d6b3ab9ddca80486e11fde607
 ELEVENLABS_VOICE_ID=sB7vwSCyX0tQmU24cW2C
 ELEVENLABS_MODEL=eleven_turbo_v2_5
 OPENAI_API_KEY=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
