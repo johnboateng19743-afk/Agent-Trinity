@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trinity — Personal AI Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a2e;
+            --bg-input: #16161f;
+            --text-primary: #e8e8ed;
+            --text-secondary: #8888a0;
+            --text-muted: #555570;
+            --accent: #6c5ce7;
+            --accent-glow: rgba(108, 92, 231, 0.3);
+            --accent-light: #a29bfe;
+            --success: #00b894;
+            --warning: #fdcb6e;
+            --danger: #e17055;
+            --border: rgba(255,255,255,0.06);
+            --radius: 16px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Layout */
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), #a29bfe);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-light), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .sidebar-section {
+            padding: 16px 12px;
+        }
+
+        .sidebar-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 8px;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            color: var(--text-secondary);
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .sidebar-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .sidebar-btn .icon { font-size: 16px; width: 20px; text-align: center; }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px dashed var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .new-chat-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent-light);
+            background: var(--accent-glow);
+        }
+
+        /* Status indicator */
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Main chat area */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-secondary);
+        }
+
+        .chat-header-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chat-header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .header-btn {
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .header-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .header-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Messages */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            scroll-behavior: smooth;
+        }
+
+        .messages::-webkit-scrollbar { width: 4px; }
+        .messages::-webkit-scrollbar-track { background: transparent; }
+        .messages::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; }
+
+        .welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--accent), #a29bfe);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px var(--accent-glow);
+        }
+
+        .welcome h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .welcome p {
+            color: var(--text-secondary);
+            max-width: 500px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .quick-action {
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .quick-action:hover {
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+
+        .quick-action .qa-icon { font-size: 20px; margin-bottom: 8px; }
+        .quick-action .qa-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .quick-action .qa-desc { font-size: 11px; color: var(--text-muted); }
+
+        /* Message bubbles */
+        .message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user { flex-direction: row-reverse; }
+
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .message.assistant .msg-avatar {
+            background: linear-gradient(135deg, var(--accent), #a29bfe);
+        }
+
+        .message.user .msg-avatar {
+            background: var(--bg-tertiary);
+        }
+
+        .msg-content {
+            max-width: 70%;
+        }
+
+        .msg-bubble {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message.assistant .msg-bubble {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-top-left-radius: 4px;
+        }
+
+        .message.user .msg-bubble {
+            background: var(--accent);
+            color: white;
+            border-top-right-radius: 4px;
+        }
+
+        .msg-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            padding: 0 4px;
+        }
+
+        .message.user .msg-time { text-align: right; }
+
+        /* Typing indicator */
+        .typing {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+
+        .typing span {
+            width: 8px;
+            height: 8px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        /* Input area */
+        .input-area {
+            padding: 16px 24px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 8px 8px 8px 16px;
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        #chatInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            max-height: 120px;
+            line-height: 1.5;
+            padding: 6px 0;
+            font-family: inherit;
+        }
+
+        #chatInput::placeholder { color: var(--text-muted); }
+
+        .input-actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .action-btn.send {
+            background: var(--accent);
+            color: white;
+        }
+
+        .action-btn.send:hover {
+            background: var(--accent-light);
+        }
+
+        .action-btn.recording {
+            background: var(--danger);
+            color: white;
+            animation: recording-pulse 1s infinite;
+        }
+
+        @keyframes recording-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(225, 112, 85, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(225, 112, 85, 0); }
+        }
+
+        /* Audio player */
+        .audio-player {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .audio-player audio {
+            height: 32px;
+            border-radius: 8px;
+        }
+
+        /* Research panel */
+        .research-panel {
+            display: none;
+            position: fixed;
+            right: 24px;
+            top: 80px;
+            width: 400px;
+            max-height: calc(100vh - 200px);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+        }
+
+        .research-panel.open { display: block; }
+
+        .research-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .research-header h3 { font-size: 14px; font-weight: 600; }
+
+        .research-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .research-body { padding: 20px; }
+        .research-body p { line-height: 1.7; font-size: 14px; color: var(--text-secondary); }
+
+        /* Markdown-like formatting */
+        .msg-bubble strong { color: var(--accent-light); }
+        .msg-bubble code { background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+        .msg-bubble pre { background: var(--bg-tertiary); padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
+        .msg-bubble pre code { background: none; padding: 0; }
+        .msg-bubble ul, .msg-bubble ol { padding-left: 20px; margin: 8px 0; }
+        .msg-bubble li { margin: 4px 0; }
+        .msg-bubble h1, .msg-bubble h2, .msg-bubble h3 { margin: 12px 0 6px; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .quick-actions { grid-template-columns: 1fr; }
+            .msg-content { max-width: 85%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">T</div>
+                    <div>
+                        <div class="logo-text">Trinity</div>
+                        <div class="logo-sub">Personal AI Assistant</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <button class="new-chat-btn" onclick="clearChat()">+ New Chat</button>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Quick Actions</div>
+                <button class="sidebar-btn" onclick="sendQuick('What can you do?')">
+                    <span class="icon">💡</span> What can you do?
+                </button>
+                <button class="sidebar-btn" onclick="sendQuick('Research the latest AI trends')">
+                    <span class="icon">🔍</span> Research a topic
+                </button>
+                <button class="sidebar-btn" onclick="sendQuick('Help me organize my tasks for today')">
+                    <span class="icon">📋</span> Plan my day
+                </button>
+                <button class="sidebar-btn" onclick="sendQuick('Read file README.md')">
+                    <span class="icon">📁</span> Read a file
+                </button>
+            </div>
+
+            <div class="status">
+                <div class="status-dot"></div>
+                <span class="status-text" id="statusText">Connected — Llama 3.2 Local</span>
+            </div>
+        </div>
+
+        <!-- Main Chat -->
+        <div class="main">
+            <div class="chat-header">
+                <div class="chat-header-title">💬 Chat with Trinity</div>
+                <div class="chat-header-actions">
+                    <button class="header-btn" id="researchBtn" onclick="toggleResearch()">🔍 Research</button>
+                    <button class="header-btn" id="voiceBtn" onclick="toggleVoiceMode()">🎤 Voice Mode</button>
+                </div>
+            </div>
+
+            <div class="messages" id="messages">
+                <div class="welcome" id="welcome">
+                    <div class="welcome-icon">T</div>
+                    <h2>Hello, Mr. Walker</h2>
+                    <p>I'm Trinity, your personal AI assistant and research agent. I run locally on your machine — private, fast, and always available.</p>
+                    <div class="quick-actions">
+                        <div class="quick-action" onclick="sendQuick('Help me research Ghana\'s tech ecosystem')">
+                            <div class="qa-icon">🔍</div>
+                            <div class="qa-title">Research</div>
+                            <div class="qa-desc">Deep dive into any topic</div>
+                        </div>
+                        <div class="quick-action" onclick="sendQuick('What files are in my current directory?')">
+                            <div class="qa-icon">📁</div>
+                            <div class="qa-title">File Explorer</div>
+                            <div class="qa-desc">Read & manage your files</div>
+                        </div>
+                        <div class="quick-action" onclick="sendQuick('Help me write a professional email')">
+                            <div class="qa-icon">✍️</div>
+                            <div class="qa-title">Writing</div>
+                            <div class="qa-desc">Drafts, emails & documents</div>
+                        </div>
+                        <div class="quick-action" onclick="sendQuick('What\'s the weather like in Accra today?')">
+                            <div class="qa-icon">🌍</div>
+                            <div class="qa-title">Ask Anything</div>
+                            <div class="qa-desc">General knowledge & help</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea id="chatInput" rows="1" placeholder="Ask Trinity anything..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+                    <div class="input-actions">
+                        <button class="action-btn" id="micBtn" onclick="toggleMic()" title="Voice input">🎤</button>
+                        <button class="action-btn send" onclick="sendMessage()" title="Send message">➤</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Research Panel -->
+        <div class="research-panel" id="researchPanel">
+            <div class="research-header">
+                <h3>🔍 Research Mode</h3>
+                <button class="research-close" onclick="toggleResearch()">✕</button>
+            </div>
+            <div class="research-body">
+                <p>Enter a topic to research and Trinity will provide a comprehensive analysis with key facts, insights, and recommendations.</p>
+                <div style="margin-top:16px;">
+                    <input type="text" id="researchInput" placeholder="Enter research topic..." 
+                           style="width:100%;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:14px;outline:none;"
+                           onkeydown="if(event.key==='Enter')doResearch()">
+                    <button onclick="doResearch()" 
+                            style="width:100%;margin-top:8px;padding:10px;background:var(--accent);color:white;border:none;border-radius:10px;font-size:14px;cursor:pointer;">
+                        Research
+                    </button>
+                </div>
+                <div id="researchResults" style="margin-top:16px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let voiceMode = false;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        // Connect WebSocket
+        function connect() {
+            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${proto}//${location.host}/ws/chat`);
+
+            ws.onopen = () => {
+                document.getElementById('statusText').textContent = 'Connected — Llama 3.2 Local';
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'user_message') {
+                    addUserBubble(data.text, data.time);
+                }
+                else if (data.type === 'typing') {
+                    showTyping();
+                }
+                else if (data.type === 'assistant_message') {
+                    removeTyping();
+                    addAssistantBubble(data.text, data.time);
+                }
+                else if (data.type === 'audio') {
+                    addAudioPlayer(data.data);
+                }
+                else if (data.type === 'transcription') {
+                    document.getElementById('chatInput').value = data.text;
+                    autoResize(document.getElementById('chatInput'));
+                }
+            };
+
+            ws.onclose = () => {
+                document.getElementById('statusText').textContent = 'Disconnected — Reconnecting...';
+                setTimeout(connect, 3000);
+            };
+
+            ws.onerror = () => {
+                document.getElementById('statusText').textContent = 'Connection error';
+            };
+        }
+
+        // Send message
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Hide welcome
+            document.getElementById('welcome').style.display = 'none';
+
+            ws.send(JSON.stringify({ type: 'chat', text: text }));
+            input.value = '';
+            input.style.height = 'auto';
+        }
+
+        // Quick send
+        function sendQuick(text) {
+            document.getElementById('welcome').style.display = 'none';
+            document.getElementById('chatInput').value = text;
+            sendMessage();
+        }
+
+        // Handle Enter key
+        function handleKey(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Auto-resize textarea
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+        }
+
+        // Add message bubbles
+        function addUserBubble(text, time) {
+            const container = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = 'message user';
+            div.innerHTML = `
+                <div class="msg-avatar">👤</div>
+                <div class="msg-content">
+                    <div class="msg-bubble">${escapeHtml(text)}</div>
+                    <div class="msg-time">${time}</div>
+                </div>
+            `;
+            container.appendChild(div);
+            scrollToBottom();
+        }
+
+        function addAssistantBubble(text, time) {
+            const container = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = 'message assistant';
+            div.innerHTML = `
+                <div class="msg-avatar">T</div>
+                <div class="msg-content">
+                    <div class="msg-bubble">${formatMarkdown(text)}</div>
+                    <div class="msg-time">${time}</div>
+                </div>
+            `;
+            container.appendChild(div);
+            scrollToBottom();
+        }
+
+        // Typing indicator
+        function showTyping() {
+            removeTyping();
+            const container = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = 'message assistant';
+            div.id = 'typingIndicator';
+            div.innerHTML = `
+                <div class="msg-avatar">T</div>
+                <div class="msg-content">
+                    <div class="msg-bubble">
+                        <div class="typing"><span></span><span></span><span></span></div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            scrollToBottom();
+        }
+
+        function removeTyping() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        // Audio player
+        function addAudioPlayer(audioB64) {
+            const container = document.getElementById('messages');
+            const lastMsg = container.querySelector('.message.assistant:last-child .msg-content');
+            if (lastMsg) {
+                const audioDiv = document.createElement('div');
+                audioDiv.className = 'audio-player';
+                audioDiv.innerHTML = `<audio controls src="data:audio/mpeg;base64,${audioB64}"></audio>`;
+                lastMsg.appendChild(audioDiv);
+            }
+        }
+
+        // Simple markdown formatting
+        function formatMarkdown(text) {
+            let html = escapeHtml(text);
+            // Bold
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            // Code blocks
+            html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            // Inline code
+            html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+            // Bullet points
+            html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+            // Line breaks
+            html = html.replace(/\n/g, '<br>');
+            return html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function scrollToBottom() {
+            const el = document.getElementById('messages');
+            setTimeout(() => el.scrollTop = el.scrollHeight, 50);
+        }
+
+        // Clear chat
+        function clearChat() {
+            document.getElementById('messages').innerHTML = '';
+            document.getElementById('welcome').style.display = 'flex';
+            document.getElementById('messages').appendChild(document.getElementById('welcome'));
+            connect(); // New session
+        }
+
+        // Research mode
+        function toggleResearch() {
+            const panel = document.getElementById('researchPanel');
+            panel.classList.toggle('open');
+        }
+
+        async function doResearch() {
+            const input = document.getElementById('researchInput');
+            const query = input.value.trim();
+            if (!query) return;
+
+            const results = document.getElementById('researchResults');
+            results.innerHTML = '<div class="typing"><span></span><span></span><span></span></div> Researching...';
+
+            try {
+                const resp = await fetch('/api/research', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query }),
+                });
+                const data = await resp.json();
+                if (data.result) {
+                    results.innerHTML = `<div style="line-height:1.7;font-size:14px;">${formatMarkdown(data.result)}</div>`;
+                    // Also add to chat
+                    sendQuick(`Research: ${query}`);
+                } else if (data.error) {
+                    results.innerHTML = `<p style="color:var(--danger);">Error: ${data.error}</p>`;
+                }
+            } catch (e) {
+                results.innerHTML = `<p style="color:var(--danger);">Failed to research. Is Trinity running?</p>`;
+            }
+        }
+
+        // Voice mode
+        function toggleVoiceMode() {
+            voiceMode = !voiceMode;
+            const btn = document.getElementById('voiceBtn');
+            btn.classList.toggle('active', voiceMode);
+            btn.textContent = voiceMode ? '🎤 Voice ON' : '🎤 Voice Mode';
+        }
+
+        // Microphone
+        async function toggleMic() {
+            const btn = document.getElementById('micBtn');
+
+            if (isRecording) {
+                // Stop recording
+                isRecording = false;
+                btn.className = 'action-btn';
+                btn.textContent = '🎤';
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+                return;
+            }
+
+            // Start recording
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const b64 = reader.result.split(',')[1];
+                        ws.send(JSON.stringify({ type: 'voice', audio: b64 }));
+                    };
+                    reader.readAsDataURL(blob);
+                    stream.getTracks().forEach(t => t.stop());
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                btn.className = 'action-btn recording';
+                btn.textContent = '⏹';
+            } catch (e) {
+                alert('Microphone access denied. Please allow microphone in your browser settings.');
+            }
+        }
+
+        // Connect on load
+        connect();
+    </script>
+</body>
+</html>

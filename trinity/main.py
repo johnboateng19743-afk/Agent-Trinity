@@ -30,7 +30,9 @@ def cli(ctx, debug: bool, config: str | None):
 @cli.command()
 @click.option("--debug", is_flag=True, help="Enable debug mode")
 @click.option("--config", default=None, help="Path to config file")
-def run(debug: bool, config: str | None):
+@click.option("--web/--no-web", default=True, help="Launch web UI")
+@click.option("--port", default=8400, help="Web UI port")
+def run(debug: bool, config: str | None, web: bool, port: int):
     """Start Trinity agent."""
     setup_logging(debug=debug)
     cfg = load_config(config_path=config)
@@ -40,25 +42,66 @@ def run(debug: bool, config: str | None):
 
     click.echo("🜂 Starting Trinity...")
     click.echo(f"   User: {cfg['trinity']['user_name']}")
-    click.echo(f"   Mode: {cfg['trinity']['privacy_mode']}")
-    click.echo(f"   LLM:  {cfg['llm']['cloud_primary']} (cloud-first)")
+    llm_mode = cfg["llm"].get("mode", "local")
+    model = cfg["llm"].get("local_fast", "unknown")
+    click.echo(f"   LLM:  {model} ({llm_mode}-first)")
     click.echo()
 
-    from trinity.daemon import TrinityDaemon
-    daemon = TrinityDaemon(cfg)
+    if web:
+        click.echo(f"   🌐 Web UI: http://localhost:{port}")
+        click.echo(f"   💬 Open your browser to start chatting")
+        click.echo()
 
-    # Handle Ctrl+C gracefully
-    def shutdown(signum, frame):
-        click.echo("\n🜂 Trinity shutting down...")
-        daemon.stop()
-        sys.exit(0)
+        from trinity.web.app import TrinityWebApp
+        from trinity.llm.router import LLMRouter
+        from trinity.voice.tts import TTSEngine
 
-    signal.signal(signal.SIGINT, shutdown)
+        llm_router = LLMRouter(cfg)
+        tts_engine = TTSEngine(cfg)
 
-    try:
-        daemon.start()
-    except KeyboardInterrupt:
-        shutdown(None, None)
+        # Load skills
+        skills = {}
+        try:
+            from trinity.skills.filesystem.reader import FileSystemReader
+            from trinity.skills.filesystem.writer import FileSystemWriter
+            skills["filesystem.read"] = FileSystemReader(cfg)
+            skills["filesystem.write"] = FileSystemWriter(cfg)
+        except Exception:
+            pass
+
+        web_app = TrinityWebApp(
+            config=cfg,
+            llm_router=llm_router,
+            tts_engine=tts_engine,
+            skills=skills,
+        )
+
+        # Handle Ctrl+C gracefully
+        def shutdown(signum, frame):
+            click.echo("\n🜂 Trinity shutting down...")
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, shutdown)
+
+        try:
+            web_app.run(host="0.0.0.0", port=port)
+        except KeyboardInterrupt:
+            shutdown(None, None)
+    else:
+        from trinity.daemon import TrinityDaemon
+        daemon = TrinityDaemon(cfg)
+
+        def shutdown(signum, frame):
+            click.echo("\n🜂 Trinity shutting down...")
+            daemon.stop()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, shutdown)
+
+        try:
+            daemon.start()
+        except KeyboardInterrupt:
+            shutdown(None, None)
 
 
 @cli.command()
