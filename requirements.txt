@@ -6,7 +6,8 @@ pytz>=2024.1
 
 # Voice - STT
 faster-whisper>=1.0.0
-webrtcvad>=2.0.10
+# Voice - VAD (webrtcvad removed — Trinity uses energy-based fallback instead)
+# webrtcvad>=2.0.0  # Only install if you have Visual Studio Build Tools
 soundfile>=0.12.1
 numpy>=1.26.0
 
